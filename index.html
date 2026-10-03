@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>共通テストまで あと何日？ 30秒モーション</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" rel="stylesheet">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:#07080c;overflow:hidden}
+canvas{width:100%;height:100%;display:block;cursor:pointer}
+</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d'),LIME='#c6ff3d',PINK='#ff3d7f',GR='#8a8f9c';
+let W=1280,H=720,P=false,d=1,VW=1280,VH=720,SCL=1;
+function fit(){d=Math.min(devicePixelRatio||1,2);VW=C.clientWidth||1280;VH=C.clientHeight||720;const ar=VW/VH;P=ar<1.45;if(P){W=720;H=Math.max(1100,Math.round(720/ar))}else{W=1280;H=720}C.width=VW*d;C.height=VH*d;SCL=Math.min(VW/W,VH/H)}
+fit();new ResizeObserver(fit).observe(C);
+// 日付計算（日本時間）
+const j=new Date(Date.now()+9*36e5),t0=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate()),TG=Date.UTC(2027,0,16);
+const D=Math.max(0,Math.round((TG-t0)/864e5));let we=0;
+for(let i=0;i<D;i++)if(new Date(t0+i*864e5).getUTCDay()==6)we++;
+document.title='共通テストまで あと'+D+'日';
+const TGMS=Date.UTC(2027,0,16)-9*36e5,p2=x=>String(x).padStart(2,'0');
+function LV(){const s=Math.floor(Math.max(0,TGMS-Date.now())/1e3);return{d:Math.floor(s/86400),h:Math.floor(s/3600),m:Math.floor(s/60),s,c:p2(Math.floor(s%86400/3600))+':'+p2(Math.floor(s%3600/60))+':'+p2(s%60)}}
+const cl=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)),sg=(t,a,b)=>cl((t-a)/(b-a)),
+oc=x=>1-Math.pow(1-x,3),oe=x=>x>=1?1:1-Math.pow(2,-10*x),
+ob=x=>{const c=2.70158;return 1+c*Math.pow(x-1,3)+1.70158*Math.pow(x-1,2)};
+const FF='"Dela Gothic One","Hiragino Sans","Noto Sans JP",sans-serif';
+function M(s,sz){X.save();X.font=sz+'px '+FF;const w=X.measureText(s).width;X.restore();return w}
+function T(s,x,y,sz,col,o={}){X.save();X.font=sz+'px '+FF;X.textAlign=o.al||'center';X.textBaseline='middle';X.globalAlpha=o.a??1;
+ if(o.ls)X.letterSpacing=o.ls+'px';
+ {const al=o.al||'center',mw=o.mw||(al=='left'?W-x-16:al=='right'?x-16:W-24),w=X.measureText(s).width;if(w>mw&&mw>0){sz*=mw/w;X.font=sz+'px '+FF}}
+ if(o.sx||o.sy){X.translate(x,y);X.scale(o.sx??1,o.sy??1);x=0;y=0}
+ if(o.ab){X.globalCompositeOperation='lighter';X.fillStyle='rgb(255,30,90)';X.fillText(s,x-o.ab,y);X.fillStyle='rgb(0,200,255)';X.fillText(s,x+o.ab,y);X.globalCompositeOperation='source-over'}
+ X.fillStyle=col;X.fillText(s,x,y);X.restore()}
+const flash=(a)=>{if(a>0){X.fillStyle=`rgba(255,255,255,${a})`;X.fillRect(-4e3,-4e3,9e3,9e3)}};
+function bg(t){X.fillStyle='#07080c';X.fillRect(0,0,VW,VH);
+ const g=X.createRadialGradient(VW/2,VH/2,50,VW/2,VH/2,Math.max(VW,VH)*.6);g.addColorStop(0,'rgba(198,255,61,.11)');g.addColorStop(1,'rgba(7,8,12,0)');X.fillStyle=g;X.fillRect(0,0,VW,VH);
+ X.strokeStyle='rgba(255,255,255,.05)';X.lineWidth=1;X.beginPath();const o=(t*30)%80;
+ for(let x=-o;x<VW;x+=80){X.moveTo(x,0);X.lineTo(x,VH)}for(let y=-o;y<VH;y+=80){X.moveTo(0,y);X.lineTo(VW,y)}X.stroke();
+ for(let i=0;i<50;i++){const x=(i*397)%VW,s=15+(i*13)%40,y=VH-((t*s+i*71)%(VH+40));X.fillStyle=i%5?'rgba(255,255,255,.18)':'rgba(255,61,127,.5)';X.fillRect(x,y,2,2+i%4*3)}}
+function s1(t){
+ flash(.9*(1-sg(t,0,.35)));
+ T('KYOTSU TEST 2027',W/2,215,30,LIME,{ls:14,a:oc(sg(t,.3,1))});
+ let p=oe(sg(t,.4,1.5));X.save();X.beginPath();X.rect(0,230,W*p,240);X.clip();T('共通テスト',W/2+(1-p)*-120,350,190,'#fff');X.restore();
+ const q=oe(sg(t,1.1,2.1));X.fillStyle=LIME;X.fillRect(W/2-350*q,490,700*q,6);
+ p=oe(sg(t,1.5,2.5));X.save();X.beginPath();X.rect(0,520,W*p,100);X.clip();T('2027.01.16 SAT',W/2+(1-p)*-80,570,84,'#fff',{ls:4});X.restore();
+ T('まで、あと何日？',W/2,665,42,GR,{a:oc(sg(t,2.9,3.5)),ls:4})}
+function s2(u){
+ const a=oc(sg(u,.3,.9)),k=oe(sg(u,.4,4.7)),v=Math.round(D+260-260*k),hit=u>4.7&&u<5.2;
+ const sh=hit?Math.sin(u*90)*14*(1-sg(u,4.7,5.2)):0;
+ X.save();X.translate(sh,sh*.5);
+ T('共通テストまで',W/2,95,56,'#fff',{a,ls:6});
+ T(String(v),W/2,335,400,'#fff',{ab:(1-k)*30+(u>4.7&&u<5?10:0),sy:1+(1-k)*.04});
+ T('日   DAYS TO GO',W/2,590,60,LIME,{a,ls:8});
+ const w=Math.floor(D/7),r=D%7;
+ T('＝ '+w+'週間'+(r?'と'+r+'日':'ちょうど'),W/2,660,46,'#fff',{a:oc(sg(u,5.2,5.8))});
+ X.restore();
+ if(u>4.7){const p=sg(u,4.7,5.7);X.strokeStyle=`rgba(198,255,61,${1-p})`;X.lineWidth=8;X.beginPath();X.arc(W/2,H/2,120+oe(p)*800,0,7);X.stroke();flash(.5*(1-sg(u,4.7,4.95)))}}
+function s3(u){
+ T('それは、',140,62,40,GR,{al:'left',a:oc(sg(u,.3,.8)),ls:4});
+ const rows=[[LV().h,'時間','HOURS','#fff'],[LV().m,'分','MINUTES',LIME],[LV().s,'秒','SECONDS',PINK]];
+ rows.forEach((r,i)=>{const s=.5+i*.35,p=sg(u,s,s+.9),e=ob(p),y=205+i*205,n=Math.round(r[0]*oe(sg(u,s,s+1.8))),
+  fin=r[0].toLocaleString('en-US'),x=140+(1-e)*-500,al=oc(p);
+  T(r[2],x,y-98,24,GR,{al:'left',ls:8,a:al});
+  T(n.toLocaleString('en-US'),x,y,150,r[3],{al:'left',a:al});
+  T(r[1],x+M(fin,150)+28,y+28,60,'#fff',{al:'left',a:al});
+  if(i<2){X.fillStyle='rgba(255,255,255,.15)';X.fillRect(140,y+104,(W-280)*oe(sg(u,s+.2,s+1.2)),2)}})}
+function s4(u){
+ const off=new Date(t0).getUTCDay(),N=D+1,cols=Math.ceil((N+off)/7),cs=P?Math.min((W-80)/7,H*.7/cols):Math.min((W-200)/cols,60),gx=(W-(P?7:cols)*cs)/2,gy=P?H*.12:170;
+ T('1マス ＝ 1日',P?30:120,P?H*.05:70,P?44:52,'#fff',{al:'left',a:oc(sg(u,.3,.8))});
+ for(let i=0;i<N;i++){const c=Math.floor((i+off)/7),r=(i+off)%7,s=.5+i*.028,e=ob(sg(u,s,s+.4));if(e<=0)continue;
+  const last=i==D,wk=r==0||r==6,wv=u>3.6?Math.max(0,1-Math.abs(i-((u-3.6)*30)%(N+10))/5):0;
+  let z=(cs-8)*e;if(last&&u>3.6)z*=1+.14*Math.sin(u*8);
+  const cx=gx+(P?r:c)*cs+cs/2,cy=gy+(P?c:r)*cs+cs/2;
+  X.save();X.globalAlpha=cl(last?1:.5+.5*wv)*cl(e*2);X.fillStyle=last?PINK:wk?'#7b8cff':LIME;
+  if(last){X.shadowColor=PINK;X.shadowBlur=30}
+  X.beginPath();X.roundRect(cx-z/2,cy-z/2,Math.max(z,0),Math.max(z,0),8);X.fill();
+  if(i==0){X.strokeStyle='#fff';X.lineWidth=3;X.stroke()}X.restore()}
+ const ly=gy+(P?cols:7)*cs+26,lc=i=>P?gx+((i+off)%7)*cs+cs/2:gx+Math.floor((i+off)/7)*cs+cs/2;
+ T(P?'▼ 今日':'▲ 今日',lc(0),P?gy-26:ly,P?28:24,'#fff',{a:oc(sg(u,.8,1.3))});
+ T('▲ 1/16 本番',Math.min(lc(D),W-110),ly,P?28:24,PINK,{a:oc(sg(u,3.4,3.9))});
+ T('毎日が、1マス。',W/2,P?H-70:675,P?56:48,'#fff',{a:oc(sg(u,4,4.6)),ls:4})}
+function s5(u){
+ const a=1-sg(u,2.1,2.5);
+ if(a>0){const p=oe(sg(u,.4,1.2));
+  X.save();X.globalAlpha=a;X.beginPath();X.rect(0,180,W,140);X.clip();T('積み上げた日だけ、',W/2,250+(1-p)*140,100,'#fff');X.restore();
+  const q=sg(u,1,1.5),sc=1+(1-ob(q))*1.2;
+  T('強くなる。',W/2,450,180,LIME,{a:a*oc(q*2),sx:sc,sy:sc,ab:(1-q)*20});flash(.3*(1-sg(u,1,1.25))*(q>0?1:0))}
+ if(u>2.4){const f=sg(u,2.4,3),s=1+(1-oe(f))*.3;
+  T('あと'+D+'日',W/2,300,220,'#fff',{a:oc(f),sx:s,sy:s,ab:u<3.1?(3.1-u)*30:0});
+  T('2027.01.16 SAT  共通テスト',W/2,470,50,GR,{a:oc(sg(u,2.8,3.4)),ls:6});
+  T('ぜんぶ、出し切れ。',W/2,590,84,LIME,{a:oc(sg(u,3.2,3.8))});
+  flash(.6*(1-sg(u,2.4,2.7)))}}
+const MO=[];let wkE=0;
+for(let i=0;i<D;i++){const dt=new Date(t0+i*864e5),m=dt.getUTCMonth()+1,w=dt.getUTCDay();if(w==0||w==6)wkE++;let o=MO.find(a=>a[0]==m);if(!o)MO.push(o=[m,0]);o[1]++}
+function sA(u){
+ T('本番は、2日間・6教科。',140,62,44,GR,{al:'left',a:oc(sg(u,.3,.8)),ls:4});
+ [['DAY 1','1/16 土',['地歴・公民','国語','外国語'],LIME],['DAY 2','1/17 日',['理科','数学','情報Ⅰ'],PINK]].forEach((c,i)=>{
+  const s=.4+i*.5,p=ob(sg(u,s,s+.8)),x=80+i*600,al=oc(sg(u,s,s+.5));
+  X.save();X.globalAlpha=al;X.translate(0,(1-p)*80);X.fillStyle='rgba(255,255,255,.06)';X.beginPath();X.roundRect(x,110,560,420,20);X.fill();X.fillStyle=c[3];X.fillRect(x,110,560,8);X.restore();
+  T(c[0],x+40,170,28,c[3],{al:'left',ls:10,a:al});T(c[1],x+40,240,80,'#fff',{al:'left',a:al});
+  c[2].forEach((n,k)=>{const q=oc(sg(u,s+.8+k*.35,s+1.2+k*.35));T(n,x+40+(1-q)*60,340+k*70,52,'#fff',{al:'left',a:q})})});
+ T('追試験  1/23(土)・24(日)',W/2,590,38,'#fff',{a:oc(sg(u,3.4,4)),ls:3});
+ T('出願の登録は 10/2 17:00 まで ／ 検定料の支払いは 10/2 23:59 まで',W/2,650,26,GR,{a:oc(sg(u,4,4.6))})}
+function sB(u){
+ T('月ごとに見ると、',140,62,44,GR,{al:'left',a:oc(sg(u,.3,.8)),ls:4});
+ T('（今日から本番の前日まで）',W-80,62,24,GR,{al:'right',a:oc(sg(u,.3,.8))});
+ MO.forEach((o,i)=>{const s=.4+i*.3,p=oe(sg(u,s,s+1.1)),y=170+i*78,bw=o[1]/31*620*p;
+  T(o[0]+'月',140,y,52,'#fff',{al:'left',a:oc(sg(u,s,s+.5))});
+  X.fillStyle=i%2?LIME:'#e9ffa8';X.fillRect(300,y-24,Math.max(2,bw),48);
+  T(Math.round(o[1]*p)+'日',300+bw+20,y,48,LIME,{al:'left',a:oc(sg(u,s,s+.5))})});
+ [['平日',D-wkE,LIME,140],['土日',wkE,'#7b8cff',700]].forEach((r,i)=>{const s=2.4+i*.4,p=oe(sg(u,s,s+1.2));
+  T(r[0],r[3],520,38,GR,{al:'left',a:oc(sg(u,s,s+.5)),ls:6});
+  T(Math.round(r[1]*p)+'日',r[3],610,120,r[2],{al:'left',a:oc(sg(u,s,s+.5))})})}
+function s1p(t){flash(.9*(1-sg(t,0,.35)));const y=H*.28;
+ T('KYOTSU TEST 2027',W/2,y-120,28,LIME,{ls:10,a:oc(sg(t,.3,1)),mw:W-40});
+ let p=oe(sg(t,.4,1.5));X.save();X.beginPath();X.rect(0,y-120,W*p,560);X.clip();T('共通',W/2+(1-p)*-100,y+60,300,'#fff');T('テスト',W/2+(1-p)*-100,y+280,215,'#fff');X.restore();
+ const q=oe(sg(t,1.1,2.1));X.fillStyle=LIME;X.fillRect(W/2-300*q,y+400,600*q,6);
+ p=oe(sg(t,1.5,2.5));X.save();X.beginPath();X.rect(0,y+430,W*p,260);X.clip();T('2027.01.16',W/2+(1-p)*-80,y+500,104,'#fff',{mw:W-40});T('SAT',W/2+(1-p)*-80,y+620,104,LIME,{ls:12});X.restore();
+ T('まで、あと何日？',W/2,H-70,42,GR,{a:oc(sg(t,2.9,3.5)),mw:W-40})}
+function s2p(u){const a=oc(sg(u,.3,.9)),k=oe(sg(u,.4,4.7)),v=Math.round(D+260-260*k),sh=u>4.7&&u<5.2?Math.sin(u*90)*10*(1-sg(u,4.7,5.2)):0,w=Math.floor(D/7),r=D%7;
+ X.save();X.translate(sh,sh*.5);
+ T('共通テストまで',W/2,H*.2,66,'#fff',{a,ls:4,mw:W-40});
+ T(String(v),W/2,H*.42,330,'#fff',{ab:(1-k)*24,mw:W-30});
+ T('日',W/2,H*.61,120,LIME,{a});T('DAYS TO GO',W/2,H*.68,48,LIME,{a,ls:10});
+ T('＝ '+w+'週間'+(r?'と'+r+'日':'ちょうど'),W/2,H*.78,56,'#fff',{a:oc(sg(u,5.2,5.8)),mw:W-40});X.restore();
+ if(u>4.7){const p=sg(u,4.7,5.7);X.strokeStyle=`rgba(198,255,61,${1-p})`;X.lineWidth=8;X.beginPath();X.arc(W/2,H/2,100+oe(p)*700,0,7);X.stroke();flash(.5*(1-sg(u,4.7,4.95)))}}
+function s3p(u){
+ T('それは、',W/2,H*.07,44,GR,{a:oc(sg(u,.3,.8)),ls:4});
+ [[LV().h,'時間','HOURS','#fff'],[LV().m,'分','MINUTES',LIME],[LV().s,'秒','SECONDS',PINK]].forEach((r,i)=>{const s=.5+i*.35,p=sg(u,s,s+.9),e=ob(p),y=H*.2+i*H*.27,n=Math.round(r[0]*oe(sg(u,s,s+1.8))),al=oc(p),x=W/2+(1-e)*-400,sz=Math.min(170,170*(W-50)/M(r[0].toLocaleString('en-US'),170));
+  T(r[2],x,y-100,26,GR,{ls:10,a:al});T(n.toLocaleString('en-US'),x,y,sz,r[3],{a:al});T(r[1],x,y+110,64,'#fff',{a:al})})}
+function sAp(u){
+ T('本番は、2日間・6教科。',W/2,H*.05,38,GR,{a:oc(sg(u,.3,.8)),ls:2,mw:W-40});
+ [['DAY 1','1/16 土',['地歴・公民','国語','外国語'],LIME],['DAY 2','1/17 日',['理科','数学','情報Ⅰ'],PINK]].forEach((c,i)=>{
+  const s=.4+i*.5,p=ob(sg(u,s,s+.8)),al=oc(sg(u,s,s+.5)),x=30,y=H*.09+i*390+(1-p)*80;
+  X.save();X.globalAlpha=al;X.fillStyle='rgba(255,255,255,.06)';X.beginPath();X.roundRect(x,y,W-60,360,20);X.fill();X.fillStyle=c[3];X.fillRect(x,y,W-60,8);X.restore();
+  T(c[0],x+30,y+60,30,c[3],{al:'left',ls:10,a:al});T(c[1],x+30,y+160,96,'#fff',{al:'left',a:al,mw:300});
+  c[2].forEach((n,k)=>{const q=oc(sg(u,s+.8+k*.35,s+1.2+k*.35));T(n,x+350+(1-q)*50,y+90+k*80,44,'#fff',{al:'left',a:q,mw:290})})});
+ T('追試験  1/23(土)・24(日)',W/2,H*.8,40,'#fff',{a:oc(sg(u,3.4,4)),mw:W-40});
+ T('出願の登録は 10/2 17:00 まで',W/2,H*.86,28,GR,{a:oc(sg(u,4,4.6)),mw:W-40});T('検定料の支払いは 10/2 23:59 まで',W/2,H*.9,28,GR,{a:oc(sg(u,4,4.6)),mw:W-40})}
+function sBp(u){
+ T('月ごとに見ると、',W/2,H*.05,44,GR,{a:oc(sg(u,.3,.8)),ls:2,mw:W-40});
+ MO.forEach((o,i)=>{const s=.4+i*.3,p=oe(sg(u,s,s+1.1)),y=H*.14+i*H*.085,bw=o[1]/31*340*p,al=oc(sg(u,s,s+.5));
+  T(o[0]+'月',40,y,60,'#fff',{al:'left',a:al});X.fillStyle=i%2?LIME:'#e9ffa8';X.fillRect(190,y-28,Math.max(2,bw),56);
+  T(Math.round(o[1]*p)+'日',190+bw+14,y,52,LIME,{al:'left',a:al})});
+ [['平日',D-wkE,LIME,40],['土日',wkE,'#7b8cff',390]].forEach((r,i)=>{const s=2.4+i*.4,p=oe(sg(u,s,s+1.2)),al=oc(sg(u,s,s+.5));
+  T(r[0],r[3],H*.6,44,GR,{al:'left',a:al,ls:6});T(Math.round(r[1]*p)+'日',r[3],H*.7,130,r[2],{al:'left',a:al,mw:300})})}
+function s5p(u){const a=1-sg(u,2.1,2.5);
+ if(a>0){const q=sg(u,1,1.5),sc=1+(1-ob(q))*1.2;
+  [['積み上げた',.28,0],['日だけ、',.38,.2]].forEach(r=>{const p=oe(sg(u,.4+r[2],1.2+r[2]));T(r[0],W/2,H*r[1]+(1-p)*120,128,'#fff',{a:a*oc(p)})});
+  T('強くなる。',W/2,H*.54,140,LIME,{a:a*oc(q*2),sx:sc,sy:sc,ab:(1-q)*20,mw:W-30});flash(.3*(1-sg(u,1,1.25))*(q>0?1:0))}
+ if(u>2.4){const f=sg(u,2.4,3),s=1+(1-oe(f))*.3,g=u<3.1?(3.1-u)*30:0;
+  T('あと',W/2,H*.2,120,'#fff',{a:oc(f)});T(String(D),W/2,H*.38,400,'#fff',{a:oc(f),sx:s,sy:s,ab:g,mw:W-30});T('日',W/2,H*.56,140,LIME,{a:oc(f)});
+  T('2027.01.16 SAT',W/2,H*.67,52,GR,{a:oc(sg(u,2.8,3.4)),ls:4,mw:W-40});T('共通テスト',W/2,H*.73,52,GR,{a:oc(sg(u,2.8,3.4)),ls:4});
+  T('ぜんぶ、出し切れ。',W/2,H*.85,84,LIME,{a:oc(sg(u,3.2,3.8)),mw:W-40});flash(.6*(1-sg(u,2.4,2.7)))}}
+function sS(u){
+ const a0=oc(sg(u,.2,.7)),L=LV(),F=P?FNp:FN,pad=P?24:30,g=P?12:16,pw=(W-2*pad-2*g)/3,sc=pw/W,ph=H*sc,y0=P?H*.07:100,ty=P?H*.035:46;
+ T('ぜんぶまとめ',pad,ty,P?44:40,LIME,{al:'left',a:a0,ls:4});T('タップでもう一度',W-pad,ty,22,GR,{al:'right',a:a0});
+ [4.2,6.3,5.5,5.2,5.5,1e9].forEach((cap,i)=>{const st=.4+i*.35,p=ob(sg(u,st,st+.6)),al=oc(sg(u,st,st+.4)),x=pad+(i%3)*(pw+g),y=y0+Math.floor(i/3)*(ph+g)+(1-p)*60,uu=Math.min(cap,Math.max(0,(u-st)*1.5));
+  X.save();X.translate(x,y);X.scale(sc,sc);X.beginPath();X.rect(0,0,W,H);X.clip();X.globalAlpha=al;X.fillStyle='rgba(0,0,0,.5)';X.fillRect(0,0,W,H);X.globalAlpha=1;
+  if(uu>0)F[i](uu);X.restore();
+  X.save();X.globalAlpha=al;X.strokeStyle=LIME;X.lineWidth=2;X.strokeRect(x,y,pw,ph);X.restore()});
+ const ca=oc(sg(u,2.6,3.2));
+ if(P){T('あと '+L.d+'日',W/2,H*.78,120,LIME,{a:ca,mw:W-40});T(L.c,W/2,H*.78+140,130,'#fff',{a:ca,mw:W-40})}
+ else T('あと '+L.d+'日 '+L.c,W/2,640,92,LIME,{a:ca})}
+const TOT=55,SC=[4.3,11.3,18.3,27.3,35.3,42.3,47.3],FN=[s1,s2,s3,sA,sB,s4,s5,sS],FNp=[s1p,s2p,s3p,sAp,sBp,s4,s5p,sS],fm=t=>'0:'+String(Math.floor(t)).padStart(2,'0')+' / 0:'+TOT;
+function draw(t){X.setTransform(d,0,0,d,0,0);bg(t);
+ X.save();X.translate((VW-W*SCL)/2,(VH-H*SCL)/2);X.scale(SCL,SCL);
+ let k=SC.findIndex(x=>t<x);if(k<0)k=SC.length;(P?FNp:FN)[k](t-(k?SC[k-1]:0));X.restore();
+ if(t<SC[SC.length-1]){const L=LV();T('あと '+L.d+'日 '+L.c,24,VH-30,18,GR,{al:'left',a:.85})}
+ SC.forEach(a=>{const p=sg(t,a-.3,a+.3);if(p>0&&p<1){X.fillStyle=LIME;if(p<.5)X.fillRect(0,0,VW*oc(p*2),VH);else{const x=VW*oc((p-.5)*2);X.fillRect(x,0,VW-x,VH)}}});
+ X.fillStyle=LIME;X.fillRect(0,VH-5,VW*t/TOT,5)}
+let tt=0,last=0;
+function loop(ts){tt=Math.min(TOT,tt+Math.min(.1,(ts-last)/1000));last=ts;draw(tt);requestAnimationFrame(loop)}
+C.onclick=()=>{tt=0};
+const go=()=>requestAnimationFrame(loop);
+(document.fonts&&document.fonts.load('100px "Dela Gothic One"','共通テスト0123456789').then(go,go))||go();
+</script></body></html>
