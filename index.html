@@ -9,19 +9,34 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:#07080c;overflow:hidden}
+#ui{position:fixed;top:calc(env(safe-area-inset-top,0px) + 4px);right:10px;display:flex;gap:8px;z-index:2;transition:opacity .4s}
+#ui.h{opacity:0;pointer-events:none}
+#ui button{min-width:38px;height:36px;padding:0 8px;border-radius:10px;border:1px solid #2a2f3a;background:rgba(22,26,34,.85);color:#fff;font-size:18px;cursor:pointer}
+#ui button.on{border-color:#c6ff3d;color:#c6ff3d}
+#pn{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:3}#pn[hidden]{display:none}
+.pc{background:#11141b;border:1px solid #2a2f3a;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px;width:min(300px,86vw);font-size:15px;color:#fff}
+.pc label{display:flex;justify-content:space-between;align-items:center}.pc input{width:72px;height:36px;border-radius:8px;border:1px solid #2a2f3a;background:#07080c;color:#fff;font-size:16px;text-align:center}
+.ch{display:flex;gap:8px}.ch button,#pn button{flex:1;min-width:0;height:36px;border-radius:10px;border:1px solid #2a2f3a;background:rgba(22,26,34,.85);color:#fff;font-size:14px;cursor:pointer}#pn button.on{border-color:#c6ff3d;color:#c6ff3d}
 canvas{width:100%;height:100%;display:block;cursor:pointer}
 </style></head><body>
 <canvas id="c"></canvas>
+<div id="ui"><button id="tb" title="タイマー開始/停止">▶</button><button id="rs" title="タイマーをリセット">↺</button><button id="ps" title="タイマーの時間を設定">25/5</button><button id="mu" title="音のオン/オフ">🔇</button></div>
+<div id="pn" hidden><div class="pc"><b>タイマー設定</b>
+<label>勉強 <span><input id="iw" type="number" min="1" max="180" value="25"> 分</span></label>
+<label>休憩 <span><input id="ib" type="number" min="1" max="60" value="5"> 分</span></label>
+<div class="ch"><button data-w="25" data-b="5">25/5</button><button data-w="50" data-b="10">50/10</button><button data-w="90" data-b="15">90/15</button></div>
+<div class="ch"><button id="pc">キャンセル</button><button id="po" class="on">設定</button></div></div></div>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d'),LIME='#c6ff3d',PINK='#ff3d7f',GR='#8a8f9c';
-let W=1280,H=720,P=false,d=1,VW=1280,VH=720,SCL=1;
-function fit(){d=Math.min(devicePixelRatio||1,2);VW=C.clientWidth||1280;VH=C.clientHeight||720;const ar=VW/VH;P=ar<1.45;if(P){W=720;H=Math.max(1100,Math.round(720/ar))}else{W=1280;H=720}C.width=VW*d;C.height=VH*d;SCL=Math.min(VW/W,VH/H)}
+let W=1280,H=720,P=false,d=1,VW=1280,VH=720,AH=720,SCL=1;
+function fit(){d=Math.min(devicePixelRatio||1,2);VW=C.clientWidth||1280;VH=C.clientHeight||720;AH=Math.max(200,VH-88);const ar=VW/AH;P=ar<1.45;if(P){W=720;H=Math.max(1320,Math.round(720/ar))}else{W=1280;H=720}C.width=VW*d;C.height=VH*d;SCL=Math.min(VW/W,AH/H)}
 fit();new ResizeObserver(fit).observe(C);
 // 日付計算（日本時間）
-const j=new Date(Date.now()+9*36e5),t0=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate()),TG=Date.UTC(2027,0,16);
-const D=Math.max(0,Math.round((TG-t0)/864e5));let we=0;
-for(let i=0;i<D;i++)if(new Date(t0+i*864e5).getUTCDay()==6)we++;
-document.title='共通テストまで あと'+D+'日';
+let t0,D,we,MO,wkE;const TG=Date.UTC(2027,0,16);
+function recalc(){const j=new Date(Date.now()+9*36e5);t0=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate());D=Math.max(0,Math.round((TG-t0)/864e5));we=0;wkE=0;MO=[];
+ for(let i=0;i<D;i++){const dt=new Date(t0+i*864e5),m=dt.getUTCMonth()+1,w=dt.getUTCDay();if(w==6)we++;if(w==0||w==6)wkE++;let o=MO.find(a=>a[0]==m);if(!o)MO.push(o=[m,0]);o[1]++}
+ document.title='共通テストまで あと'+D+'日'}
+recalc();
 const TGMS=Date.UTC(2027,0,16)-9*36e5,p2=x=>String(x).padStart(2,'0');
 function LV(){const s=Math.floor(Math.max(0,TGMS-Date.now())/1e3);return{d:Math.floor(s/86400),h:Math.floor(s/3600),m:Math.floor(s/60),s,c:p2(Math.floor(s%86400/3600))+':'+p2(Math.floor(s%3600/60))+':'+p2(s%60)}}
 const cl=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)),sg=(t,a,b)=>cl((t-a)/(b-a)),
@@ -29,12 +44,16 @@ oc=x=>1-Math.pow(1-x,3),oe=x=>x>=1?1:1-Math.pow(2,-10*x),
 ob=x=>{const c=2.70158;return 1+c*Math.pow(x-1,3)+1.70158*Math.pow(x-1,2)};
 const FF='"Dela Gothic One","Hiragino Sans","Noto Sans JP",sans-serif';
 function M(s,sz){X.save();X.font=sz+'px '+FF;const w=X.measureText(s).width;X.restore();return w}
-function T(s,x,y,sz,col,o={}){X.save();X.font=sz+'px '+FF;X.textAlign=o.al||'center';X.textBaseline='middle';X.globalAlpha=o.a??1;
+const DW=sz=>Math.max(...'0123456789'.split('').map(c=>M(c,sz)));
+function T(s,x,y,sz,col,o={}){
+ const dgw=()=>Math.max(...'0123456789'.split('').map(c=>X.measureText(c).width)),TW=q=>{const w=dgw();return [...q].reduce((a,c)=>a+(/\d/.test(c)?w:X.measureText(c).width),0)},
+ fx=(q,xx,yy)=>{if(!o.tab){X.fillText(q,xx,yy);return}const w=dgw(),ad=[...q].map(c=>/\d/.test(c)?w:X.measureText(c).width),tt_=ad.reduce((a,b)=>a+b,0);let cx=o.al=='left'?xx:o.al=='right'?xx-tt_:xx-tt_/2;const a0=X.textAlign;X.textAlign='left';[...q].forEach((c,i)=>{X.fillText(c,cx,yy);cx+=ad[i]});X.textAlign=a0};
+X.save();X.font=sz+'px '+FF;X.textAlign=o.al||'center';X.textBaseline='middle';X.globalAlpha=o.a??1;
  if(o.ls)X.letterSpacing=o.ls+'px';
- {const al=o.al||'center',mw=o.mw||(al=='left'?W-x-16:al=='right'?x-16:W-24),w=X.measureText(s).width;if(w>mw&&mw>0){sz*=mw/w;X.font=sz+'px '+FF}}
+ {const al=o.al||'center',mw=o.mw||(al=='left'?W-x-16:al=='right'?x-16:W-24),w=o.tab?TW(s):X.measureText(s).width;if(w>mw&&mw>0){sz*=mw/w;X.font=sz+'px '+FF}}
  if(o.sx||o.sy){X.translate(x,y);X.scale(o.sx??1,o.sy??1);x=0;y=0}
- if(o.ab){X.globalCompositeOperation='lighter';X.fillStyle='rgb(255,30,90)';X.fillText(s,x-o.ab,y);X.fillStyle='rgb(0,200,255)';X.fillText(s,x+o.ab,y);X.globalCompositeOperation='source-over'}
- X.fillStyle=col;X.fillText(s,x,y);X.restore()}
+ if(o.ab){X.globalCompositeOperation='lighter';X.fillStyle='rgb(255,30,90)';fx(s,x-o.ab,y);X.fillStyle='rgb(0,200,255)';fx(s,x+o.ab,y);X.globalCompositeOperation='source-over'}
+ X.fillStyle=col;fx(s,x,y);X.restore()}
 const flash=(a)=>{if(a>0){X.fillStyle=`rgba(255,255,255,${a})`;X.fillRect(-4e3,-4e3,9e3,9e3)}};
 function bg(t){X.fillStyle='#07080c';X.fillRect(0,0,VW,VH);
  const g=X.createRadialGradient(VW/2,VH/2,50,VW/2,VH/2,Math.max(VW,VH)*.6);g.addColorStop(0,'rgba(198,255,61,.11)');g.addColorStop(1,'rgba(7,8,12,0)');X.fillStyle=g;X.fillRect(0,0,VW,VH);
@@ -65,7 +84,7 @@ function s3(u){
  rows.forEach((r,i)=>{const s=.5+i*.35,p=sg(u,s,s+.9),e=ob(p),y=205+i*205,n=Math.round(r[0]*oe(sg(u,s,s+1.8))),
   fin=r[0].toLocaleString('en-US'),x=140+(1-e)*-500,al=oc(p);
   T(r[2],x,y-98,24,GR,{al:'left',ls:8,a:al});
-  T(n.toLocaleString('en-US'),x,y,150,r[3],{al:'left',a:al});
+  T(n.toLocaleString('en-US'),x,y,150,r[3],{al:'left',a:al,tab:1});
   T(r[1],x+M(fin,150)+28,y+28,60,'#fff',{al:'left',a:al});
   if(i<2){X.fillStyle='rgba(255,255,255,.15)';X.fillRect(140,y+104,(W-280)*oe(sg(u,s+.2,s+1.2)),2)}})}
 function s4(u){
@@ -94,8 +113,6 @@ function s5(u){
   T('2027.01.16 SAT  共通テスト',W/2,470,50,GR,{a:oc(sg(u,2.8,3.4)),ls:6});
   T('ぜんぶ、出し切れ。',W/2,590,84,LIME,{a:oc(sg(u,3.2,3.8))});
   flash(.6*(1-sg(u,2.4,2.7)))}}
-const MO=[];let wkE=0;
-for(let i=0;i<D;i++){const dt=new Date(t0+i*864e5),m=dt.getUTCMonth()+1,w=dt.getUTCDay();if(w==0||w==6)wkE++;let o=MO.find(a=>a[0]==m);if(!o)MO.push(o=[m,0]);o[1]++}
 function sA(u){
  T('本番は、2日間・6教科。',140,62,44,GR,{al:'left',a:oc(sg(u,.3,.8)),ls:4});
  [['DAY 1','1/16 土',['地歴・公民','国語','外国語'],LIME],['DAY 2','1/17 日',['理科','数学','情報Ⅰ'],PINK]].forEach((c,i)=>{
@@ -131,7 +148,7 @@ function s2p(u){const a=oc(sg(u,.3,.9)),k=oe(sg(u,.4,4.7)),v=Math.round(D+260-26
 function s3p(u){
  T('それは、',W/2,H*.07,44,GR,{a:oc(sg(u,.3,.8)),ls:4});
  [[LV().h,'時間','HOURS','#fff'],[LV().m,'分','MINUTES',LIME],[LV().s,'秒','SECONDS',PINK]].forEach((r,i)=>{const s=.5+i*.35,p=sg(u,s,s+.9),e=ob(p),y=H*.2+i*H*.27,n=Math.round(r[0]*oe(sg(u,s,s+1.8))),al=oc(p),x=W/2+(1-e)*-400,sz=Math.min(170,170*(W-50)/M(r[0].toLocaleString('en-US'),170));
-  T(r[2],x,y-100,26,GR,{ls:10,a:al});T(n.toLocaleString('en-US'),x,y,sz,r[3],{a:al});T(r[1],x,y+110,64,'#fff',{a:al})})}
+  T(r[2],x,y-100,26,GR,{ls:10,a:al});T(n.toLocaleString('en-US'),x,y,sz,r[3],{a:al,tab:1});T(r[1],x,y+110,64,'#fff',{a:al})})}
 function sAp(u){
  T('本番は、2日間・6教科。',W/2,H*.05,38,GR,{a:oc(sg(u,.3,.8)),ls:2,mw:W-40});
  [['DAY 1','1/16 土',['地歴・公民','国語','外国語'],LIME],['DAY 2','1/17 日',['理科','数学','情報Ⅰ'],PINK]].forEach((c,i)=>{
@@ -164,18 +181,92 @@ function sS(u){
   if(uu>0)F[i](uu);X.restore();
   X.save();X.globalAlpha=al;X.strokeStyle=LIME;X.lineWidth=2;X.strokeRect(x,y,pw,ph);X.restore()});
  const ca=oc(sg(u,2.6,3.2));
- if(P){T('あと '+L.d+'日',W/2,H*.78,120,LIME,{a:ca,mw:W-40});T(L.c,W/2,H*.78+140,130,'#fff',{a:ca,mw:W-40})}
- else T('あと '+L.d+'日 '+L.c,W/2,640,92,LIME,{a:ca})}
+ if(P){T('あと '+L.d+'日',W/2,H*.78,120,LIME,{a:ca,mw:W-40});T(L.c,W/2,H*.78+140,130,'#fff',{a:ca,mw:W-40,tab:1})}
+ else {const q='あと '+L.d+'日 '+L.c;T(q,(W-M(q.replace(/\d/g,'0'),92))/2,640,92,LIME,{al:'left',a:ca})}}
+const PH=['一問ずつでいい。','今日の1ページが、本番の1点。','休憩も、勉強のうち。','水を一口飲もう。','姿勢をなおして、深呼吸。','わからないところは、伸びしろ。','昨日の自分より、1問だけ前へ。','積み上げた分は、消えない。','書いて、声に出して、確かめる。','5分休んだら、また戻れる。','できたところを1つ数えよう。','目を遠くに向けて、10秒休ませよう。'],
+PR=[[25,5]],TM={run:false,ph:0,pre:0,rem:1500,end:0,cnt:0};try{const q=JSON.parse(localStorage.getItem('kt'));if(q&&q[0]>=1&&q[1]>=1){PR[0]=q;TM.rem=q[0]*60}}catch(e){}
+function TS(){if(TM.run){const n=Date.now();let r=Math.ceil((TM.end-n)/1e3);if(r<=0){if(TM.ph==0)TM.cnt++;TM.ph^=1;r=PR[TM.pre][TM.ph]*60;TM.end=n+r*1e3;chime()}TM.rem=r}return TM.rem}
+function chime(){if(!AC||!snd)return;[0,.18].forEach((dl,i)=>{const o=AC.createOscillator(),g=AC.createGain(),a=AC.currentTime+dl;o.type='triangle';o.frequency.value=i?880:660;g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(.25,a+.01);g.gain.exponentialRampToValueAtTime(.0001,a+.8);o.connect(g);g.connect(CP);o.start(a);o.stop(a+.9)})}
+function cal(x,y,cs,g){const B=Date.UTC(2026,7,30);for(let i=0;i<140;i++){const ms=B+i*864e5,c=Math.floor(i/7),r=i%7;
+ X.globalAlpha=ms<t0?.14:1;X.fillStyle=ms==TG?PINK:ms>=t0&&(r==0||r==6)?'#7b8cff':LIME;X.beginPath();X.roundRect(x+c*(cs+g),y+r*(cs+g),cs,cs,3);X.fill();
+ if(ms==t0){X.globalAlpha=1;X.strokeStyle='#fff';X.lineWidth=3;X.stroke()}}X.globalAlpha=1}
+function sAmb(now){
+ const L=LV(),tr=TS(),ph=TM.ph,pg=cl(1-tr/(PR[TM.pre][ph]*60)),mm=p2(Math.floor(tr/60))+':'+p2(tr%60),col=ph?'#7b8cff':LIME,jd=new Date(now+9*36e5),nx=D>100?100:D>50?50:D>30?30:D>10?10:1,
+ foot='今日 '+(jd.getUTCMonth()+1)+'/'+jd.getUTCDate()+'（'+'日月火水木金土'[jd.getUTCDay()]+'）'+(D>1?'　'+nx+'日まで あと'+(D-nx)+'日':''),
+ st=TM.run?PR[TM.pre][0]+'分勉強 → '+PR[TM.pre][1]+'分休憩　'+TM.cnt+'セット完了':'右上の ▶ でタイマー開始',
+ lb=(ph?'休憩':'勉強')+(TM.run?'':'（停止中）'),phr=PH[Math.floor(now/3e5)%PH.length],y=v=>P?v*H/1320:v,bar=(x,yy,w)=>{X.fillStyle='rgba(255,255,255,.12)';X.fillRect(x,yy,w,10);X.fillStyle=col;X.fillRect(x,yy,w*pg,10)};
+ if(!P){
+  T('共通テスト 2027.01.16 SAT',60,52,26,GR,{al:'left',ls:4});
+  if(D<=0){T('本番',300,300,260,LIME);T('ぜんぶ、出し切れ。',300,500,50,'#fff')}
+  else{const q=String(D),w=M(q,230);T('あと',300,150,48,GR);T(q,300,330,230,'#fff');T('日',300+w/2+16,375,80,LIME,{al:'left'});T(L.c,300,520,84,'#fff',{tab:1});T('本番当日の0:00まで',300,585,22,GR)}
+  cal(700,110,24,3);T(lb,970,380,30,GR,{ls:4});T(mm,970,470,150,'#fff',{mw:540,tab:1});bar(700,550,540);
+  T(st,970,598,24,GR,{mw:540});T(phr,970,655,28,'#fff',{mw:540});T(foot,60,655,24,GR,{al:'left'})}
+ else{
+  T('共通テスト 2027.01.16 SAT',30,y(40),26,GR,{al:'left',ls:2});
+  if(D<=0){T('本番',W/2,y(330),300,LIME);T('ぜんぶ、出し切れ。',W/2,y(560),64,'#fff',{mw:W-60})}
+  else{T('あと',W/2,y(120),48,GR);T(String(D),W/2,y(300),270,'#fff',{mw:W-80});T('日',W/2,y(465),72,LIME);T(L.c,W/2,y(560),96,'#fff',{mw:W-60,tab:1});T('本番当日の0:00まで',W/2,y(618),22,GR)}
+  cal(30,y(668),30,3);T(foot,W/2,y(935),26,GR,{mw:W-60});T(lb,W/2,y(990),32,GR,{ls:4});T(mm,W/2,y(1100),190,'#fff',{mw:W-80,tab:1});bar(60,y(1215),W-120);
+  T(st,W/2,y(1252),26,GR,{mw:W-60});T(phr,W/2,y(1295),34,'#fff',{mw:W-60})}}
+function drawAmb(){const now=Date.now(),a=now/6e5*6.283;X.setTransform(d,0,0,d,0,0);bg(0);
+ X.save();X.translate((VW-W*SCL)/2+Math.sin(a)*5,44+(AH-H*SCL)/2+Math.cos(a)*5);X.scale(SCL,SCL);sAmb(now);X.restore();
+ if(snd===null)T('♪ タップで音を出す',VW/2,22,18,'#fff',{a:.7})}
+function draw(t){show?drawShow(t):drawAmb()}
 const TOT=55,SC=[4.3,11.3,18.3,27.3,35.3,42.3,47.3],FN=[s1,s2,s3,sA,sB,s4,s5,sS],FNp=[s1p,s2p,s3p,sAp,sBp,s4,s5p,sS],fm=t=>'0:'+String(Math.floor(t)).padStart(2,'0')+' / 0:'+TOT;
-function draw(t){X.setTransform(d,0,0,d,0,0);bg(t);
- X.save();X.translate((VW-W*SCL)/2,(VH-H*SCL)/2);X.scale(SCL,SCL);
+function drawShow(t){X.setTransform(d,0,0,d,0,0);bg(t);
+ X.save();X.translate((VW-W*SCL)/2,44+(AH-H*SCL)/2);X.scale(SCL,SCL);
  let k=SC.findIndex(x=>t<x);if(k<0)k=SC.length;(P?FNp:FN)[k](t-(k?SC[k-1]:0));X.restore();
- if(t<SC[SC.length-1]){const L=LV();T('あと '+L.d+'日 '+L.c,24,VH-30,18,GR,{al:'left',a:.85})}
+ if(t<SC[SC.length-1]){const L=LV();T('あと '+L.d+'日 '+L.c,24,VH-22,20,GR,{al:'left',a:.9})}
  SC.forEach(a=>{const p=sg(t,a-.3,a+.3);if(p>0&&p<1){X.fillStyle=LIME;if(p<.5)X.fillRect(0,0,VW*oc(p*2),VH);else{const x=VW*oc((p-.5)*2);X.fillRect(x,0,VW-x,VH)}}});
- X.fillStyle=LIME;X.fillRect(0,VH-5,VW*t/TOT,5)}
+ X.fillStyle=LIME;X.fillRect(0,VH-5,VW*t/TOT,5);if(snd===null)T('♪ タップで音を出す',VW/2,22,18,'#fff',{a:.55+.35*Math.sin(t*5)})}
 let tt=0,last=0;
-function loop(ts){tt=Math.min(TOT,tt+Math.min(.1,(ts-last)/1000));last=ts;draw(tt);requestAnimationFrame(loop)}
-C.onclick=()=>{tt=0};
+let show=true,lk=Math.floor(Date.now()/6e5),la=0,dk=Math.floor((Date.now()+9*36e5)/864e5);
+function startShow(){show=true;tt=0;hold=0;if(snd!==null)sfxStart()}
+function loop(ts){const dt=Math.min(.1,(ts-last)/1000);last=ts;const k=Math.floor(Date.now()/6e5);if(k!==lk){lk=k;startShow()}
+ if(show){tt=Math.min(TOT,tt+dt);if(tt>=TOT){hold+=dt;if(hold>2.5)show=false}draw(tt);la=0}
+ else if(ts-la>250){la=ts;const key=Math.floor((Date.now()+9*36e5)/864e5);if(key!==dk){dk=key;recalc()}draw(0)}
+ requestAnimationFrame(loop)}
+let AC=null,CP,MG,RUN,snd=null,loopOn=false,hold=0;
+function sfxStart(){
+ if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();CP=AC.createDynamicsCompressor();MG=AC.createGain();MG.gain.value=snd?1:0;CP.connect(MG);MG.connect(AC.destination)}
+ const c=AC;c.resume();if(RUN)RUN.disconnect();
+ const S0=c.currentTime+.08,m=RUN=c.createGain();m.gain.setValueAtTime(.8,S0+53);m.gain.linearRampToValueAtTime(0,S0+55);m.connect(CP);
+ const nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
+ const tone=(t,f,d,v,ty,f2)=>{const o=c.createOscillator(),g=c.createGain(),a=S0+t;o.type=ty||'sine';o.frequency.setValueAtTime(f,a);if(f2)o.frequency.exponentialRampToValueAtTime(f2,a+d);
+  g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(v,a+.005);g.gain.exponentialRampToValueAtTime(.0001,a+.005+d);o.connect(g);g.connect(m);o.start(a);o.stop(a+d+.05)};
+ const noise=(t,d,f1,f2,v,up)=>{const q=c.createBufferSource(),fl=c.createBiquadFilter(),g=c.createGain(),a=S0+t;q.buffer=nb;q.loop=true;fl.type='bandpass';fl.Q.value=.9;
+  fl.frequency.setValueAtTime(f1,a);fl.frequency.exponentialRampToValueAtTime(f2,a+d);g.gain.setValueAtTime(.0001,a);g.gain.exponentialRampToValueAtTime(v,a+d*(up?.9:.25));g.gain.exponentialRampToValueAtTime(.0001,a+d);
+  q.connect(fl);fl.connect(g);g.connect(m);q.start(a);q.stop(a+d+.05)};
+ const boom=t=>{tone(t,110,1.2,.9,'sine',32);noise(t,.6,2500,150,.5)},tick=(t,f)=>tone(t,f,.04,.12,'square'),ping=(t,f)=>tone(t,f,.4,.25,'triangle'),thump=t=>tone(t,90,.25,.7,'sine',40);
+ boom(0);noise(.4,1.1,200,3500,.3);noise(1.5,.9,400,4000,.25);
+ [4,11,18,27,35,42,47].forEach(a=>noise(a,.6,300,5000,.45));
+ noise(4.7,4.3,200,6000,.22,true);
+ for(let n=1;n<44;n++){const k=n*6/260;if(k>=.995)break;tick(4.7+4.3*(-Math.log2(1-k)/10),900+n*22)}
+ boom(9);noise(9,1,6000,300,.4);
+ [1,1.25,1.5].forEach((r,i)=>ping(11.8+i*.35,523*r));
+ thump(18.7);thump(19.2);[0,1].forEach(i=>[0,1,2].forEach(k=>tick(18.3+.4+i*.5+.8+k*.35,1200+k*200)));
+ for(let i=0;i<4;i++)ping(27.7+i*.3,392*[1,1.125,1.25,1.5][i]);ping(29.7,659);ping(30.1,784);
+ for(let i=0;i<106;i+=2)tone(35.8+i*.028,330*Math.pow(2,[0,2,4,7,9][(i/2|0)%5]/12)*(1+((i/10|0)%2)),.12,.12,'sine');
+ tone(38.9,55,1.5,.5,'sine');
+ noise(42.7,.8,300,4500,.3);thump(43.3);boom(43.3);noise(43.9,.9,200,7000,.3,true);boom(44.7);[523,659,784].forEach(f=>ping(44.7,f));
+ for(let i=0;i<6;i++)tick(47.7+i*.35,1400+i*120);[523,659,784,1047].forEach(f=>ping(49.9,f));
+ for(let b=0;4.3+b*.5<46.8;b++){const t=4.3+b*.5;tone(t,150,.18,.55,'sine',45);noise(t+.25,.05,7000,9000,.1)}
+ [55,110.7].forEach(f=>{const o=c.createOscillator(),fl=c.createBiquadFilter(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;fl.type='lowpass';fl.frequency.value=380;
+  g.gain.setValueAtTime(0,S0);g.gain.linearRampToValueAtTime(.07,S0+4);g.gain.setValueAtTime(.07,S0+52);g.gain.linearRampToValueAtTime(0,S0+54);o.connect(fl);fl.connect(g);g.connect(m);o.start(S0);o.stop(S0+55)})}
+const mu=document.getElementById('mu'),tb=document.getElementById('tb'),rs=document.getElementById('rs'),ps=document.getElementById('ps'),uiEl=document.getElementById('ui');
+function ui(){mu.textContent=snd?'🔊':'🔇';mu.classList.toggle('on',!!snd);tb.textContent=TM.run?'⏸':'▶';tb.classList.toggle('on',TM.run);ps.textContent=PR[TM.pre][0]+'/'+PR[TM.pre][1]}
+let WLk=null;async function wl(){try{WLk=await navigator.wakeLock.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&WLk)wl()});
+C.onclick=()=>{if(snd===null)snd=true;startShow();ui();wl()};
+mu.onclick=()=>{if(snd!==true){snd=true;if(!AC)startShow();else MG.gain.value=1}else{snd=false;if(AC)MG.gain.value=0}ui()};
+tb.onclick=()=>{if(!TM.run){TM.run=true;TM.end=Date.now()+TM.rem*1e3}else{TS();TM.run=false}ui()};
+rs.onclick=()=>{TM.run=false;TM.ph=0;TM.rem=PR[TM.pre][0]*60;ui()};
+const pn=document.getElementById('pn'),iw=document.getElementById('iw'),ib=document.getElementById('ib'),cv=(e,lo,hi)=>Math.min(hi,Math.max(lo,Math.round(+e.value)||lo));
+ps.onclick=()=>{iw.value=PR[0][0];ib.value=PR[0][1];pn.hidden=false};
+document.getElementById('pc').onclick=()=>{pn.hidden=true};
+document.getElementById('po').onclick=()=>{PR[0]=[cv(iw,1,180),cv(ib,1,60)];try{localStorage.setItem('kt',JSON.stringify(PR[0]))}catch(e){}rs.onclick();pn.hidden=true};
+pn.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{iw.value=b.dataset.w;ib.value=b.dataset.b});
+setInterval(TS,1000);let ht;function wk(){uiEl.classList.remove('h');clearTimeout(ht);ht=setTimeout(()=>uiEl.classList.add('h'),4000)}
+['pointerdown','pointermove','keydown'].forEach(e=>addEventListener(e,wk));wk();ui();
 const go=()=>requestAnimationFrame(loop);
 (document.fonts&&document.fonts.load('100px "Dela Gothic One"','共通テスト0123456789').then(go,go))||go();
 </script></body></html>
